@@ -170,6 +170,7 @@ if (isSAMLLoginEnabled) {
   providers.push({
     id: "saml",
     name: "BoxyHQ",
+    allowDangerousEmailAccountLinking: !hostedCal,
     type: "oauth",
     version: "2.0",
     checks: ["pkce", "state"],
