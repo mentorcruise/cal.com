@@ -108,7 +108,7 @@ const UsernameTextfield = (props: ICustomUsernameProps) => {
   };
 
   return (
-    <div>
+    <div className="hidden">
       <div className="flex rounded-md">
         <div className="relative w-full">
           <TextField
