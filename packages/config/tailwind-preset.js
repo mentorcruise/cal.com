@@ -13,7 +13,7 @@ module.exports = {
   darkMode: "class",
   theme: {
     fontFamily: {
-      cal: ['"Cal Sans"', "sans-serif"],
+      cal: ['"Inter var"', "sans-serif"],
       sans: ['"Inter var"', "sans-serif"],
     },
     extend: {
@@ -33,16 +33,16 @@ module.exports = {
         brand: {
           // Figure out a way to automate this for self hosted users
           // Goto https://javisperez.github.io/tailwindcolorshades to generate your brand color
-          50: "#d1d5db",
-          100: "#9ca3af",
-          200: "#6b7280",
-          300: "#4b5563",
-          400: "#374151",
-          500: "#111827", // Brand color
-          600: "#0f1623",
-          700: "#0d121d",
-          800: "#0a0e17",
-          900: "#080c13",
+          '50': '#f3f5f7', 
+          '100': '#e8eaee', 
+          '200': '#c5cbd6', 
+          '300': '#a2abbd', 
+          '400': '#5d6d8b', 
+          '500': '#172e59', 
+          '600': '#152950', 
+          '700': '#112343', 
+          '800': '#0e1c35', 
+          '900': '#0b172c',
           DEFAULT: "var(--brand-color)",
         },
         gray: {
@@ -162,7 +162,7 @@ module.exports = {
         dropdown: "0px 2px 6px -1px rgba(0, 0, 0, 0.08)",
       },
       fontFamily: {
-        cal: ['"Cal Sans"', "sans-serif"],
+        cal: ['"Inter var"', "sans-serif"],
         mono: ["Roboto Mono", "monospace"],
         sans: ['"Inter var"', "sans-serif"],
       },
