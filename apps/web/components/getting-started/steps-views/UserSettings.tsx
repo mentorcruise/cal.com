@@ -51,10 +51,9 @@ const UserSettings = (props: IUserSettingsProps) => {
 
   return (
     <form onSubmit={onSubmit}>
+      {/* Username textfield */}
+      <UsernameAvailabilityField user={user} />
       <div className="space-y-6">
-        {/* Username textfield */}
-        <UsernameAvailabilityField user={user} />
-
         {/* Full name textfield */}
         <div className="w-full">
           <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-700">
