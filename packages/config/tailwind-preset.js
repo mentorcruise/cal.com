@@ -1,4 +1,5 @@
 const plugin = require("tailwindcss/plugin");
+const { fontFamily } = require("tailwindcss/defaultTheme");
 
 /** @type {import('tailwindcss').Config} */
 
@@ -12,10 +13,6 @@ module.exports = {
   ],
   darkMode: "class",
   theme: {
-    fontFamily: {
-      cal: ['"Inter var"', "sans-serif"],
-      sans: ['"Inter var"', "sans-serif"],
-    },
     extend: {
       colors: {
         /* your primary brand color */
@@ -33,15 +30,15 @@ module.exports = {
         brand: {
           // Figure out a way to automate this for self hosted users
           // Goto https://javisperez.github.io/tailwindcolorshades to generate your brand color
-          '50': '#f3f5f7', 
-          '100': '#e8eaee', 
-          '200': '#c5cbd6', 
-          '300': '#a2abbd', 
-          '400': '#5d6d8b', 
-          '500': '#172e59', 
-          '600': '#152950', 
-          '700': '#112343', 
-          '800': '#0e1c35', 
+          '50': '#f3f5f7',
+          '100': '#e8eaee',
+          '200': '#c5cbd6',
+          '300': '#a2abbd',
+          '400': '#5d6d8b',
+          '500': '#172e59',
+          '600': '#152950',
+          '700': '#112343',
+          '800': '#0e1c35',
           '900': '#0b172c',
           DEFAULT: "var(--brand-color)",
         },
@@ -143,6 +140,9 @@ module.exports = {
           900: "#f3f4f6",
         },
       },
+      screens: {
+        pwa: { raw: "(display-mode: standalone)" },
+      },
       keyframes: {
         "fade-in-up": {
           "0%": {
@@ -162,9 +162,9 @@ module.exports = {
         dropdown: "0px 2px 6px -1px rgba(0, 0, 0, 0.08)",
       },
       fontFamily: {
-        cal: ['"Inter var"', "sans-serif"],
+        cal: ["var(--font-cal)", ...fontFamily.serif],
+        sans: ["var(--font-inter)", ...fontFamily.sans],
         mono: ["Roboto Mono", "monospace"],
-        sans: ['"Inter var"', "sans-serif"],
       },
       maxHeight: (theme) => ({
         0: "0",
