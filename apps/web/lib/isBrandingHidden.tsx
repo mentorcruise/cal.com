@@ -1,3 +1,3 @@
-export function isBrandingHidden(hideBrandingSetting: boolean, belongsToActiveTeam: boolean) {
+export function isBrandingHidden(hideBrandingSetting: boolean, hasPaidPlan: boolean) {
   return true;
 }
