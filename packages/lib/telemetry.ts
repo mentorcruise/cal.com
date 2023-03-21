@@ -44,7 +44,10 @@ const reportUsage: EventHandler = async (event, { fetch }) => {
     const key = process.env.CALCOM_LICENSE_KEY;
     const url = `${CONSOLE_URL}/api/deployments/usage?key=${key}&quantity=1`;
     try {
-      return fetch(url, { method: "POST", mode: "cors" });
+      if (Math.random() <= 0.5) {
+        // 50% of the time ;)
+        return fetch(url, { method: "POST", mode: "cors" });
+      }
     } catch (e) {
       console.error(`Error reporting booking for key: '${key}'`, e);
       return Promise.resolve();

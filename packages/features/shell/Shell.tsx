@@ -19,7 +19,7 @@ import { Tips } from "@calcom/features/tips";
 import AdminPasswordBanner from "@calcom/features/users/components/AdminPasswordBanner";
 import CustomBranding from "@calcom/lib/CustomBranding";
 import classNames from "@calcom/lib/classNames";
-import { APP_NAME, DESKTOP_APP_LINK, JOIN_SLACK, ROADMAP, WEBAPP_URL } from "@calcom/lib/constants";
+import { APP_NAME, WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import useTheme from "@calcom/lib/hooks/useTheme";
 import { trpc } from "@calcom/trpc/react";
@@ -380,39 +380,6 @@ function UserDropdown({ small }: { small?: boolean }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <DropdownItem
-                    StartIcon={(props) => <FiSlack strokeWidth={1.5} {...props} />}
-                    target="_blank"
-                    rel="noreferrer"
-                    href={JOIN_SLACK}>
-                    {t("join_our_slack")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <DropdownItem StartIcon={FiMap} target="_blank" href={ROADMAP}>
-                    {t("visit_roadmap")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <DropdownItem
-                    type="button"
-                    StartIcon={(props) => <FiHelpCircle aria-hidden="true" {...props} />}
-                    onClick={() => setHelpOpen(true)}>
-                    {t("help")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="desktop-hidden hidden lg:flex">
-                  <DropdownItem
-                    StartIcon={FiDownload}
-                    target="_blank"
-                    rel="noreferrer"
-                    href={DESKTOP_APP_LINK}>
-                    {t("download_desktop_app")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <DropdownItem
                     type="button"
                     StartIcon={(props) => <FiLogOut aria-hidden="true" {...props} />}
                     onClick={() => signOut({ callbackUrl: "/auth/logout" })}>
@@ -471,13 +438,6 @@ const navigation: NavigationItemType[] = [
     name: "availability",
     href: "/availability",
     icon: FiClock,
-  },
-  {
-    name: "teams",
-    href: "/teams",
-    icon: FiUsers,
-    onlyDesktop: true,
-    badge: <TeamInviteBadge />,
   },
   {
     name: "apps",

@@ -99,7 +99,7 @@ tabs.find((tab) => {
 });
 
 // The following keys are assigned to admin only
-const adminRequiredKeys = ["admin"];
+const adminRequiredKeys = ["security", "billing", "developer", "teams","admin"];
 
 const useTabs = () => {
   const session = useSession();
