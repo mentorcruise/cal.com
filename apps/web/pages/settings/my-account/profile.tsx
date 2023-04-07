@@ -47,7 +47,7 @@ const SkeletonLoader = ({ title, description }: { title: string; description: st
   return (
     <SkeletonContainer>
       <Meta title={title} description={description} />
-      <div className="mt-6 mb-8 space-y-6 divide-y">
+      <div className="mt-6 mb-8 space-y-6">
         <div className="flex items-center">
           <SkeletonAvatar className="h-12 w-12 px-4" />
           <SkeletonButton className="h-6 w-32 rounded-md p-5" />
@@ -226,6 +226,57 @@ const ProfileView = () => {
         }
       />
 
+      <hr className="border-subtle my-6" />
+
+      <Label>{t("danger_zone")}</Label>
+      {/* Delete account Dialog */}
+      <Dialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
+        <DialogTrigger asChild>
+          <Button data-testid="delete-account" color="destructive" className="mt-1" StartIcon={FiTrash2}>
+            {t("delete_account")}
+          </Button>
+        </DialogTrigger>
+        <DialogContent
+          title={t("delete_account_modal_title")}
+          description={t("confirm_delete_account_modal", { appName: APP_NAME })}
+          type="creation"
+          Icon={FiAlertTriangle}>
+          <>
+            <p className="text-default mb-7">
+              {t("delete_account_confirmation_message", { appName: APP_NAME })}
+            </p>
+            {isCALIdentityProviver && (
+              <PasswordField
+                data-testid="password"
+                name="password"
+                id="password"
+                autoComplete="current-password"
+                required
+                label="Password"
+                ref={passwordRef}
+              />
+            )}
+
+            {user?.twoFactorEnabled && isCALIdentityProviver && (
+              <Form handleSubmit={onConfirm} className="pb-4" form={form}>
+                <TwoFactor center={false} />
+              </Form>
+            )}
+
+            {hasDeleteErrors && <Alert severity="error" title={deleteErrorMessage} />}
+            <DialogFooter>
+              <Button
+                color="primary"
+                data-testid="delete-account-confirm"
+                onClick={(e) => onConfirmButton(e)}>
+                {t("delete_my_account")}
+              </Button>
+              <DialogClose />
+            </DialogFooter>
+          </>
+        </DialogContent>
+      </Dialog>
+
       {/* If changing email, confirm password */}
       <Dialog open={confirmPasswordOpen} onOpenChange={setConfirmPasswordOpen}>
         <DialogContent
@@ -320,6 +371,9 @@ const ProfileForm = ({
       {extraField}
       <div className="mt-8">
         <TextField label={t("full_name")} {...formMethods.register("name")} />
+      </div>
+      <div className="mt-8">
+        <TextField label={t("email")} hint={t("change_email_hint")} {...formMethods.register("email")} />
       </div>
       <div className="mt-8">
         <Label>{t("about")}</Label>
