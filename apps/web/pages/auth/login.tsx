@@ -149,7 +149,7 @@ export default function Login({
             : null
         }>
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} data-testid="login-form">
+          <form className="hidden" onSubmit={methods.handleSubmit(onSubmit)} data-testid="login-form">
             <div>
               <input defaultValue={csrfToken || undefined} type="hidden" hidden {...register("csrfToken")} />
             </div>
@@ -196,7 +196,7 @@ export default function Login({
           </form>
           {!twoFactorRequired && (
             <>
-              {(isGoogleLoginEnabled || isSAMLLoginEnabled) && <hr className="border-subtle my-8" />}
+              {(isGoogleLoginEnabled || isSAMLLoginEnabled) && <hr className="border-subtle my-8 hidden" />}
               <div className="space-y-3">
                 {isGoogleLoginEnabled && (
                   <Button
