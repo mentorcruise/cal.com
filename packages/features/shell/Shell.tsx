@@ -384,38 +384,6 @@ function UserDropdown({ small }: { small?: boolean }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <DropdownItem
-<<<<<<< HEAD
-=======
-                    StartIcon={(props) => <Slack strokeWidth={1.5} {...props} />}
-                    target="_blank"
-                    rel="noreferrer"
-                    href={JOIN_SLACK}>
-                    {t("join_our_slack")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <DropdownItem StartIcon={Map} target="_blank" href={ROADMAP}>
-                    {t("visit_roadmap")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <DropdownItem
-                    type="button"
-                    StartIcon={(props) => <HelpCircle aria-hidden="true" {...props} />}
-                    onClick={() => setHelpOpen(true)}>
-                    {t("help")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="desktop-hidden hidden lg:flex">
-                  <DropdownItem StartIcon={Download} target="_blank" rel="noreferrer" href={DESKTOP_APP_LINK}>
-                    {t("download_desktop_app")}
-                  </DropdownItem>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <DropdownItem
->>>>>>> upstream/main
                     type="button"
                     StartIcon={(props) => <LogOut aria-hidden="true" {...props} />}
                     onClick={() => signOut({ callbackUrl: "/auth/logout" })}>
