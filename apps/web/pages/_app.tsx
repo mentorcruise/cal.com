@@ -27,6 +27,7 @@ const calFont = localFont({
 function MyApp(props: AppProps) {
   const { Component, pageProps, err, router } = props;
   let pageStatus = "200";
+
   if (router.pathname === "/404") {
     pageStatus = "404";
   } else if (router.pathname === "/500") {
@@ -62,6 +63,7 @@ function MyApp(props: AppProps) {
           --font-cal: ${calFont.style.fontFamily};
         }
       `}</style>
+
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
