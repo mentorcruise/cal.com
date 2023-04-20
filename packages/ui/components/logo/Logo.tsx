@@ -1,4 +1,5 @@
 import classNames from "@calcom/lib/classNames";
+import { LOGO } from "@calcom/lib/constants";
 
 export default function Logo({
   small,
