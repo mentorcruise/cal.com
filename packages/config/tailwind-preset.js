@@ -42,6 +42,7 @@ module.exports = {
           default: "var(--cal-brand,'#111827')",
           emphasis: "var(--cal-brand-emphasis,'#101010')",
           subtle: "var(--cal-brand-subtle,'#9CA3AF')",
+          accent: "var(--cal-brand-accent,white)",
         },
         gray: {
           50: "#F9FAFB",
