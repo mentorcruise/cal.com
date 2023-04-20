@@ -1,6 +1,7 @@
 import classNames from "classnames";
 
-import { HeadSeo, Logo } from "@calcom/ui";
+import { APP_NAME, LOGO } from "@calcom/lib/constants";
+import { HeadSeo } from "@calcom/ui";
 
 import Loader from "@components/Loader";
 
