@@ -3,7 +3,6 @@ import { v5 as uuidv5 } from "uuid";
 
 import appStore from "@calcom/app-store";
 import { getDailyAppKeys } from "@calcom/app-store/dailyvideo/lib/getDailyAppKeys";
-import { sendBrokenIntegrationEmail } from "@calcom/emails";
 import { getUid } from "@calcom/lib/CalEventParser";
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
@@ -84,7 +83,7 @@ const createMeeting = async (credential: CredentialWithAppName, calEvent: Calend
 
     returnObject = { ...returnObject, createdEvent: createdMeeting, success: true };
   } catch (err) {
-    await sendBrokenIntegrationEmail(calEvent, "video");
+    // await sendBrokenIntegrationEmail(calEvent, "video");
     console.error("createMeeting failed", err, calEvent);
 
     // Default to calVideo
@@ -112,7 +111,7 @@ const updateMeeting = async (
   const updatedMeeting =
     credential && bookingRef
       ? await firstVideoAdapter?.updateMeeting(bookingRef, calEvent).catch(async (e) => {
-          await sendBrokenIntegrationEmail(calEvent, "video");
+          // await sendBrokenIntegrationEmail(calEvent, "video");
           log.error("updateMeeting failed", e, calEvent);
           success = false;
           return undefined;
