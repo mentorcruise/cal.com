@@ -13,15 +13,13 @@ import { ArrowRight } from "@calcom/ui/components/icon";
 
 import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
 
-import type { IOnboardingPageProps } from "../../../pages/getting-started/[[...step]]";
-
 interface IUserSettingsProps {
-  user: IOnboardingPageProps["user"];
   nextStep: () => void;
 }
 
 const UserSettings = (props: IUserSettingsProps) => {
-  const { user, nextStep } = props;
+  const { nextStep } = props;
+  const [user] = trpc.viewer.me.useSuspenseQuery();
   const { t } = useLocale();
   const [selectedTimeZone, setSelectedTimeZone] = useState(dayjs.tz.guess());
   const telemetry = useTelemetry();
