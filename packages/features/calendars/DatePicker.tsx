@@ -1,6 +1,9 @@
+import { shallow } from "zustand/shallow";
+
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
 import { useEmbedStyles } from "@calcom/embed-core/embed-iframe";
+import { useBookerStore } from "@calcom/features/bookings/Booker/store";
 import classNames from "@calcom/lib/classNames";
 import { daysInMonth, yyyymmdd } from "@calcom/lib/date-fns";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -13,11 +16,11 @@ export type DatePickerProps = {
   /** which day of the week to render the calendar. Usually Sunday (=0) or Monday (=1) - default: Sunday */
   weekStart?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   /** Fires whenever a selected date is changed. */
-  onChange: (date: Dayjs) => void;
+  onChange: (date: Dayjs | null) => void;
   /** Fires when the month is changed. */
   onMonthChange?: (date: Dayjs) => void;
-  /** which date is currently selected (not tracked from here) */
-  selected?: Dayjs | null;
+  /** which date or dates are currently selected (not tracked from here) */
+  selected?: Dayjs | Dayjs[] | null;
   /** defaults to current date. */
   minDate?: Dayjs;
   /** Furthest date selectable in the future, default = UNLIMITED */
@@ -27,11 +30,13 @@ export type DatePickerProps = {
   /** Defaults to [], which dates are not bookable. Array of valid dates like: ["2022-04-23", "2022-04-24"] */
   excludedDates?: string[];
   /** defaults to all, which dates are bookable (inverse of excludedDates) */
-  includedDates?: string[];
+  includedDates?: string[] | null;
   /** allows adding classes to the container */
   className?: string;
   /** Shows a small loading spinner next to the month name */
   isLoading?: boolean;
+  /** used to query the multiple selected dates */
+  eventSlug?: string;
 };
 
 export const Day = ({
@@ -64,7 +69,11 @@ export const Day = ({
       {...props}>
       {date.date()}
       {date.isToday() && (
-        <span className="absolute left-1/2 top-1/2 flex h-[5px] w-[5px] -translate-x-1/2 translate-y-[8px] items-center justify-center rounded-full bg-white align-middle sm:translate-y-[12px]">
+        <span
+          className={classNames(
+            "bg-brand-default absolute left-1/2 top-1/2 flex h-[5px] w-[5px] -translate-x-1/2 translate-y-[8px] items-center justify-center rounded-full align-middle sm:translate-y-[12px]",
+            active && "invert"
+          )}>
           <span className="sr-only">{t("today")}</span>
         </span>
       )}
@@ -100,6 +109,7 @@ const Days = ({
   selected,
   month,
   nextMonthButton,
+  eventSlug,
   ...props
 }: Omit<DatePickerProps, "locale" | "className" | "weekStart"> & {
   DayComponent?: React.FC<React.ComponentProps<typeof Day>>;
@@ -111,7 +121,7 @@ const Days = ({
   // Create placeholder elements for empty days in first week
   const weekdayOfFirst = browsingDate.date(1).day();
   const currentDate = minDate.utcOffset(browsingDate.utcOffset());
-  const availableDates = (includedDates: string[] | undefined) => {
+  const availableDates = (includedDates: string[] | undefined | null) => {
     const dates = [];
     const lastDateOfMonth = browsingDate.date(daysInMonth(browsingDate));
     for (
@@ -138,9 +148,51 @@ const Days = ({
     days.push(date);
   }
 
+  const daysToRenderForTheMonth = days.map((day) => {
+    if (!day) return { day: null, disabled: true };
+    return {
+      day: day,
+      disabled:
+        (includedDates && !includedDates.includes(yyyymmdd(day))) || excludedDates.includes(yyyymmdd(day)),
+    };
+  });
+
+  useHandleInitialDateSelection({
+    daysToRenderForTheMonth,
+    selected,
+    onChange: props.onChange,
+  });
+
+  const [selectedDatesAndTimes] = useBookerStore((state) => [state.selectedDatesAndTimes], shallow);
+
+  const isActive = (day: dayjs.Dayjs) => {
+    // for selecting a range of dates
+    if (Array.isArray(selected)) {
+      return Array.isArray(selected) && selected?.some((e) => yyyymmdd(e) === yyyymmdd(day));
+    }
+
+    if (selected && yyyymmdd(selected) === yyyymmdd(day)) {
+      return true;
+    }
+
+    // for selecting multiple dates for an event
+    if (
+      eventSlug &&
+      selectedDatesAndTimes &&
+      selectedDatesAndTimes[eventSlug as string] &&
+      Object.keys(selectedDatesAndTimes[eventSlug as string]).length > 0
+    ) {
+      return Object.keys(selectedDatesAndTimes[eventSlug as string]).some((date) => {
+        return yyyymmdd(dayjs(date)) === yyyymmdd(day);
+      });
+    }
+
+    return false;
+  };
+
   return (
     <>
-      {days.map((day, idx) => (
+      {daysToRenderForTheMonth.map(({ day, disabled }, idx) => (
         <div key={day === null ? `e-${idx}` : `day-${day.format()}`} className="relative w-full pt-[100%]">
           {day === null ? (
             <div key={`e-${idx}`} />
@@ -157,11 +209,8 @@ const Days = ({
               onClick={() => {
                 props.onChange(day);
               }}
-              disabled={
-                (includedDates && !includedDates.includes(yyyymmdd(day))) ||
-                excludedDates.includes(yyyymmdd(day))
-              }
-              active={selected ? yyyymmdd(selected) === yyyymmdd(day) : false}
+              disabled={disabled}
+              active={isActive(day)}
             />
           )}
         </div>
@@ -213,7 +262,7 @@ const DatePicker = ({
           <div className="flex">
             <Button
               className={classNames(
-                "group p-1 opacity-70 hover:opacity-100",
+                "group p-1 opacity-70 hover:opacity-100 rtl:rotate-180",
                 !browsingDate.isAfter(dayjs()) &&
                   "disabled:text-bookinglighter hover:bg-background hover:opacity-70"
               )}
@@ -225,7 +274,7 @@ const DatePicker = ({
               StartIcon={ChevronLeft}
             />
             <Button
-              className="group p-1 opacity-70 hover:opacity-100"
+              className="group p-1 opacity-70 hover:opacity-100 rtl:rotate-180"
               onClick={() => changeMonth(+1)}
               data-testid="incrementMonth"
               color="minimal"
@@ -254,6 +303,43 @@ const DatePicker = ({
       </div>
     </div>
   );
+};
+
+/**
+ * Takes care of selecting a valid date in the month if the selected date is not available in the month
+ */
+const useHandleInitialDateSelection = ({
+  daysToRenderForTheMonth,
+  selected,
+  onChange,
+}: {
+  daysToRenderForTheMonth: { day: Dayjs | null; disabled: boolean }[];
+  selected: Dayjs | Dayjs[] | null | undefined;
+  onChange: (date: Dayjs | null) => void;
+}) => {
+  // Let's not do something for now in case of multiple selected dates as behaviour is unclear and it's not needed at the moment
+  if (selected instanceof Array) {
+    return;
+  }
+  const firstAvailableDateOfTheMonth = daysToRenderForTheMonth.find((day) => !day.disabled)?.day;
+
+  const isSelectedDateAvailable = selected
+    ? daysToRenderForTheMonth.some(({ day, disabled }) => {
+        if (day && yyyymmdd(day) === yyyymmdd(selected) && !disabled) return true;
+      })
+    : false;
+
+  if (firstAvailableDateOfTheMonth) {
+    // If selected date not available in the month, select the first available date of the month
+    if (!isSelectedDateAvailable) {
+      onChange(firstAvailableDateOfTheMonth);
+    }
+  } else {
+    // No date is available and if we were asked to select something inform that it couldn't be selected. This would actually help in not showing the timeslots section(with No Time Available) when no date in the month is available
+    if (selected) {
+      onChange(null);
+    }
+  }
 };
 
 export default DatePicker;

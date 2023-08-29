@@ -15,6 +15,7 @@ import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
 
 interface IUserSettingsProps {
   nextStep: () => void;
+  hideUsername?: boolean;
 }
 
 const UserSettings = (props: IUserSettingsProps) => {
@@ -68,6 +69,9 @@ const UserSettings = (props: IUserSettingsProps) => {
       {/* Username textfield */}
       <UsernameAvailabilityField user={user} />
       <div className="space-y-6">
+        {/* Username textfield: when not coming from signup */}
+        {!props.hideUsername && <UsernameAvailabilityField />}
+
         {/* Full name textfield */}
         <div className="w-full">
           <label htmlFor="name" className="text-default mb-2 block text-sm font-medium">

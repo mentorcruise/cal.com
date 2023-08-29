@@ -63,7 +63,7 @@ export function SAMLLogin({ samlTenantID, samlProductID, setErrorMessage }: Prop
           email,
         });
       }}>
-      Sign in with MentorCruise
+      {t("signin_with_saml_oidc")}
     </Button>
   );
 }

@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 import type { NextApiResponse, GetServerSidePropsContext } from "next";
 
@@ -8,6 +7,7 @@ import { validateIntervalLimitOrder } from "@calcom/lib";
 import logger from "@calcom/lib/logger";
 import { getTranslation } from "@calcom/lib/server";
 import { validateBookerLayouts } from "@calcom/lib/validateBookerLayouts";
+import type { PrismaClient } from "@calcom/prisma";
 import { WorkflowActions, WorkflowTriggerEvents } from "@calcom/prisma/client";
 import { SchedulingType } from "@calcom/prisma/enums";
 
@@ -67,6 +67,7 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
         select: {
           name: true,
           id: true,
+          parentId: true,
         },
       },
     },
@@ -187,7 +188,8 @@ export const updateHandler = async ({ ctx, input }: UpdateOptions) => {
     const teamMemberIds = memberships.map((membership) => membership.userId);
     // guard against missing IDs, this may mean a member has just been removed
     // or this request was forged.
-    if (!hosts.every((host) => teamMemberIds.includes(host.userId))) {
+    // we let this pass through on organization sub-teams
+    if (!hosts.every((host) => teamMemberIds.includes(host.userId)) && !eventType.team?.parentId) {
       throw new TRPCError({
         code: "FORBIDDEN",
       });
