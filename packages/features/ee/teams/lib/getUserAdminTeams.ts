@@ -84,6 +84,8 @@ const getUserAdminTeams = async ({
         isUser: true,
         ...(includeCredentials && { credentials: user.credentials }),
       };
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       teams.unshift(userObject);
     }
   }
