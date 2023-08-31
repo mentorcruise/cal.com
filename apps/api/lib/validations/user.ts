@@ -90,6 +90,7 @@ export const schemaUserBaseBodyParams = User.pick({
 // Here we can both require or not (adding optional or nullish) and also rewrite validations for any value
 // for example making weekStart only accept weekdays as input
 const schemaUserEditParams = z.object({
+  name: z.string().optional(),
   email: z.string().email(),
   username: usernameSchema,
   weekStart: z.nativeEnum(weekdays).optional(),
@@ -125,6 +126,7 @@ const schemaUserCreateParams = z.object({
     .nullable(),
   locale: z.nativeEnum(locales).optional(),
   createdDate: iso8601.optional(),
+  emailVerified: iso8601.optional(),
 });
 
 // @note: These are the values that are editable via PATCH method on the user Model,
