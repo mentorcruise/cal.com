@@ -27,7 +27,6 @@ import { SMS_REMINDER_NUMBER_FIELD, SystemField } from "@calcom/features/booking
 import { getBookingWithResponses } from "@calcom/features/bookings/lib/get-booking";
 import { getBookingFieldsWithSystemFields } from "@calcom/features/bookings/lib/getBookingFields";
 import { parseRecurringEvent } from "@calcom/lib";
-import { APP_NAME } from "@calcom/lib/constants";
 import {
   formatToLocalizedDate,
   formatToLocalizedTime,
@@ -46,7 +45,7 @@ import prisma from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 import { BookingStatus } from "@calcom/prisma/enums";
 import { bookingMetadataSchema, customInputSchema, EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
-import { Alert, Badge, Button, EmailInput, HeadSeo, useCalcomTheme } from "@calcom/ui";
+import { Alert, Badge, HeadSeo, useCalcomTheme } from "@calcom/ui";
 import { AlertCircle, Calendar, Check, ChevronLeft, ExternalLink, X } from "@calcom/ui/components/icon";
 
 import { timeZone } from "@lib/clock";
@@ -689,42 +688,6 @@ export default function Success(props: SuccessProps) {
                       </div>
                     </>
                   )}
-
-                {session === null && !(userIsOwner || props.hideBranding) && (
-                  <>
-                    <hr className="border-subtle mt-8" />
-                    <div className="text-default pt-8 text-center text-xs">
-                      <a href="https://cal.com/signup">
-                        {t("create_booking_link_with_calcom", { appName: APP_NAME })}
-                      </a>
-
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const target = e.target as typeof e.target & {
-                            email: { value: string };
-                          };
-                          router.push(`https://cal.com/signup?email=${target.email.value}`);
-                        }}
-                        className="mt-4 flex">
-                        <EmailInput
-                          name="email"
-                          id="email"
-                          defaultValue={email}
-                          className="mr- focus:border-brand-default border-default text-default mt-0 block w-full rounded-none rounded-l-md shadow-sm focus:ring-black  sm:text-sm"
-                          placeholder="rick.astley@cal.com"
-                        />
-                        <Button
-                          size="lg"
-                          type="submit"
-                          className="min-w-max rounded-none rounded-r-md"
-                          color="primary">
-                          {t("try_for_free")}
-                        </Button>
-                      </form>
-                    </div>
-                  </>
-                )}
               </div>
               {isGmail && (
                 <Alert
