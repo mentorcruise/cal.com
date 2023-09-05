@@ -13,7 +13,7 @@ export const getScheduleSchema = z
     // invitee timezone
     timeZone: z.string().optional(),
     // or list of users (for dynamic events)
-    usernameList: z.array(z.string()).min(1).optional(),
+    usernameList: z.union([z.string(), z.array(z.string())]).optional(),
     debug: z.boolean().optional(),
     // to handle event types with multiple duration options
     duration: z
