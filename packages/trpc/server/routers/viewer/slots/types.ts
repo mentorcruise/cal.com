@@ -20,6 +20,9 @@ export const getScheduleSchema = z
       .string()
       .optional()
       .transform((val) => val && parseInt(val)),
+    rescheduleUid: z.string().optional().nullable(),
+    // whether to do team event or user event
+    isTeamEvent: z.boolean().optional().default(false),
   })
   .transform((val) => {
     // Need this so we can pass a single username in the query string form public API
