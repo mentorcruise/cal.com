@@ -157,7 +157,11 @@ export default function Login({
             : null
         }>
         <FormProvider {...methods}>
-          <form className="hidden" onSubmit={methods.handleSubmit(onSubmit)} noValidate data-testid="login-form">
+          <form
+            className="hidden"
+            onSubmit={methods.handleSubmit(onSubmit)}
+            noValidate
+            data-testid="login-form">
             <div>
               <input defaultValue={csrfToken || undefined} type="hidden" hidden {...register("csrfToken")} />
             </div>
@@ -288,7 +292,7 @@ const _getServerSideProps = async function getServerSideProps(context: GetServer
 
   const userCount = await prisma.user.count();
   if (userCount === 0) {
-    // Proceed to new onboarding to create first admin user
+    // Proceed to new onboarding to create first admin user test
     return {
       redirect: {
         destination: "/auth/setup",
