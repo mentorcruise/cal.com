@@ -115,10 +115,6 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
   }
   const hasEmailBeenChanged = data.email && user.email !== data.email;
 
-  if (hasEmailBeenChanged) {
-    data.emailVerified = null;
-  }
-
   // check if we are changing email and identity provider is not CAL
   const hasEmailChangedOnNonCalProvider =
     hasEmailBeenChanged && user.identityProvider !== IdentityProvider.CAL;
@@ -126,8 +122,8 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
 
   if (hasEmailChangedOnNonCalProvider) {
     // Only validate if we're changing email
-    data.identityProvider = IdentityProvider.CAL;
-    data.identityProviderId = null;
+    // data.identityProvider = IdentityProvider.CAL;
+    // data.identityProviderId = null;
   } else if (hasEmailChangedOnCalProvider) {
     // when the email changes, the user needs to sign in again.
     signOutUser = true;
