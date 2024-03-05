@@ -559,3 +559,30 @@ Special thanks to these amazing projects which help power Cal.com:
 - [Prisma](https://prisma.io/)
 
 Cal.com is an [open startup](https://cal.com/open) and [Jitsu](https://github.com/jitsucom/jitsu) (an open-source Segment alternative) helps us to track most of the usage metrics.
+
+## Updates
+
+Go into staging branch
+
+```
+git checkout staging
+```
+
+Pull upstream production branch
+
+```
+git pull upstream production
+```
+
+Alternatively, update to a specific version
+
+```
+git fetch upstream tag v3.8.4 && git merge FETCH_HEAD
+```
+
+To deploy the version in production, do this
+
+```
+git checkout main
+git merge staging
+```
