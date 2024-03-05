@@ -56,7 +56,11 @@ export function Header({
 
   // In month view we only show the layout toggle.
   if (isMonthView) {
-    return <LayoutToggleWithData />;
+    return (
+      <div className="flex gap-2">
+        <LayoutToggleWithData />
+      </div>
+    );
   }
   const endDate = selectedDate.add(layout === BookerLayouts.COLUMN_VIEW ? extraDays : extraDays - 1, "days");
 

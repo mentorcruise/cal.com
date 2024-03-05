@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Frame, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import type { IncomingMessage, ServerResponse } from "http";
 import { createServer } from "http";
@@ -6,6 +6,10 @@ import { createServer } from "http";
 import { noop } from "lodash";
 import type { API, Messages } from "mailhog";
 
+import type { Prisma } from "@calcom/prisma/client";
+import { BookingStatus } from "@calcom/prisma/enums";
+
+import type { Fixtures } from "./fixtures";
 import { test } from "./fixtures";
 
 export function todo(title: string) {
@@ -82,7 +86,7 @@ export async function waitFor(fn: () => Promise<unknown> | unknown, opts: { time
   }
 }
 
-export async function selectFirstAvailableTimeSlotNextMonth(page: Page) {
+export async function selectFirstAvailableTimeSlotNextMonth(page: Page | Frame) {
   // Let current month dates fully render.
   await page.click('[data-testid="incrementMonth"]');
 
@@ -192,6 +196,7 @@ export async function installAppleCalendar(page: Page) {
   await page.waitForURL("/apps/apple-calendar");
   await page.click('[data-testid="install-app-button"]');
 }
+
 export async function getEmailsReceivedByUser({
   emails,
   userEmail,
@@ -227,4 +232,45 @@ export async function expectEmailsToHaveSubject({
 
   expect(organizerFirstEmail.subject).toBe(emailSubject);
   expect(bookerFirstEmail.subject).toBe(emailSubject);
+}
+
+// this method is not used anywhere else
+// but I'm keeping it here in case we need in the future
+async function createUserWithSeatedEvent(users: Fixtures["users"]) {
+  const slug = "seats";
+  const user = await users.create({
+    eventTypes: [
+      {
+        title: "Seated event",
+        slug,
+        seatsPerTimeSlot: 10,
+        requiresConfirmation: true,
+        length: 30,
+        disableGuests: true, // should always be true for seated events
+      },
+    ],
+  });
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const eventType = user.eventTypes.find((e) => e.slug === slug)!;
+  return { user, eventType };
+}
+
+export async function createUserWithSeatedEventAndAttendees(
+  fixtures: Pick<Fixtures, "users" | "bookings">,
+  attendees: Prisma.AttendeeCreateManyBookingInput[]
+) {
+  const { user, eventType } = await createUserWithSeatedEvent(fixtures.users);
+
+  const booking = await fixtures.bookings.create(user.id, user.username, eventType.id, {
+    status: BookingStatus.ACCEPTED,
+    // startTime with 1 day from now and endTime half hour after
+    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+    attendees: {
+      createMany: {
+        data: attendees,
+      },
+    },
+  });
+  return { user, eventType, booking };
 }

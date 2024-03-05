@@ -10,6 +10,7 @@ import { shallow } from "zustand/shallow";
 
 import type { Dayjs } from "@calcom/dayjs";
 import dayjs from "@calcom/dayjs";
+import { AvailableTimesHeader } from "@calcom/features/bookings";
 import { AvailableTimes } from "@calcom/features/bookings";
 import { useBookerStore, useInitializeBookerStore } from "@calcom/features/bookings/Booker/store";
 import { useEvent, useScheduleForEvent } from "@calcom/features/bookings/Booker/utils/event";
@@ -39,7 +40,7 @@ import {
   TextField,
   TimezoneSelect,
 } from "@calcom/ui";
-import { ArrowDown, ArrowLeft, ArrowUp, Sun } from "@calcom/ui/components/icon";
+import { ArrowLeft, Sun } from "@calcom/ui/components/icon";
 
 import { getDimension } from "./lib/getDimension";
 import type { EmbedTabs, EmbedType, EmbedTypes, PreviewState } from "./types";
@@ -80,12 +81,6 @@ function useRouterHelpers() {
 
   return { goto, removeQueryParams };
 }
-
-const getQueryParam = (queryParam: string) => {
-  const params = new URLSearchParams(window.location.search);
-
-  return params.get(queryParam);
-};
 
 const ThemeSelectControl = ({ children, ...props }: ControlProps<{ value: Theme; label: string }, false>) => {
   return (
@@ -136,8 +131,6 @@ const EmailEmbed = ({ eventType, username }: { eventType?: EventType; username: 
   const { t, i18n } = useLocale();
 
   const [timezone] = useTimePreferences((state) => [state.timezone]);
-
-  const [selectTime, setSelectTime] = useState(false);
 
   useInitializeBookerStore({
     username,
@@ -229,8 +222,10 @@ const EmailEmbed = ({ eventType, username }: { eventType?: EventType; username: 
             <div className="text-default text-sm">{t("select_date")}</div>
             <DatePicker
               isLoading={schedule.isLoading}
-              onChange={(date) => setSelectedDate(date ? date.format("YYYY-MM-DD") : date)}
-              onMonthChange={(date) => {
+              onChange={(date: Dayjs | null) => {
+                setSelectedDate(date === null ? date : date.format("YYYY-MM-DD"));
+              }}
+              onMonthChange={(date: Dayjs) => {
                 setMonth(date.format("YYYY-MM"));
                 setSelectedDate(date.format("YYYY-MM-DD"));
               }}
@@ -246,36 +241,25 @@ const EmailEmbed = ({ eventType, username }: { eventType?: EventType; username: 
       </div>
       {selectedDate ? (
         <div className="mt-[9px] font-medium ">
-          <Collapsible open>
-            <CollapsibleContent>
-              <div
-                className="text-default mb-[9px] flex cursor-pointer items-center justify-between text-sm"
-                onClick={() => setSelectTime((prev) => !prev)}>
-                <p>{t("select_time")}</p>{" "}
-                <>
-                  {!selectedDate || !selectTime ? <ArrowDown className="w-4" /> : <ArrowUp className="w-4" />}
-                </>
-              </div>
-              {selectTime && selectedDate ? (
-                <div className="flex h-full w-full flex-row gap-4">
-                  <AvailableTimes
-                    className="w-full"
-                    date={dayjs(selectedDate)}
-                    selectedSlots={
-                      eventType.slug &&
-                      selectedDatesAndTimes &&
-                      selectedDatesAndTimes[eventType.slug] &&
-                      selectedDatesAndTimes[eventType.slug][selectedDate as string]
-                        ? selectedDatesAndTimes[eventType.slug][selectedDate as string]
-                        : undefined
-                    }
-                    onTimeSelect={onTimeSelect}
-                    slots={slots}
-                  />
-                </div>
-              ) : null}
-            </CollapsibleContent>
-          </Collapsible>
+          {selectedDate ? (
+            <div className="flex h-full w-full flex-row gap-4">
+              <AvailableTimesHeader date={dayjs(selectedDate)} />
+              <AvailableTimes
+                className="w-full"
+                selectedSlots={
+                  eventType.slug &&
+                  selectedDatesAndTimes &&
+                  selectedDatesAndTimes[eventType.slug] &&
+                  selectedDatesAndTimes[eventType.slug][selectedDate as string]
+                    ? selectedDatesAndTimes[eventType.slug][selectedDate as string]
+                    : undefined
+                }
+                onTimeSelect={onTimeSelect}
+                slots={slots}
+                showAvailableSeatsCount={eventType.seatsShowAvailabilityCount}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
       <div className="mb-[9px] font-medium ">
@@ -536,7 +520,7 @@ const EmbedTypeCodeAndPreviewDialogContent = ({
     (state) => [state.month, state.selectedDatesAndTimes],
     shallow
   );
-  const eventId = getQueryParam("eventId");
+  const eventId = searchParams.get("eventId");
   const calLink = decodeURIComponent(embedUrl);
   const { data: eventTypeData } = trpc.viewer.eventTypes.get.useQuery(
     { id: parseInt(eventId as string) },
