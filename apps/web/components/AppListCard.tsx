@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import type { CredentialOwner } from "@calcom/app-store/types";
+import classNames from "@calcom/lib/classNames";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { useTypedQuery } from "@calcom/lib/hooks/useTypedQuery";
@@ -78,9 +79,15 @@ export default function AppListCard(props: AppListCardProps) {
   }, []);
 
   return (
-    <div className={`${highlight ? "dark:bg-muted bg-yellow-100" : ""}`}>
-      <div className="flex items-center gap-x-3 px-5 py-4">
-        {logo ? <img className="h-10 w-10" src={logo} alt={`${title} logo`} /> : null}
+    <div className={classNames(highlight && "dark:bg-muted bg-yellow-100")}>
+      <div className="flex items-center gap-x-3 px-4 py-4 sm:px-6">
+        {logo ? (
+          <img
+            className={classNames(logo.includes("-dark") && "dark:invert", "h-10 w-10")}
+            src={logo}
+            alt={`${title} logo`}
+          />
+        ) : null}
         <div className="flex grow flex-col gap-y-1 truncate">
           <div className="flex items-center gap-x-2">
             <h3 className="text-emphasis truncate text-sm font-semibold">{title}</h3>

@@ -1,9 +1,11 @@
 import { m } from "framer-motion";
 import dynamic from "next/dynamic";
+import { useEffect } from "react";
 import { shallow } from "zustand/shallow";
 
 import { useEmbedUiConfig, useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import { EventDetails, EventMembers, EventMetaSkeleton, EventTitle } from "@calcom/features/bookings";
+import { SeatsAvailabilityText } from "@calcom/features/bookings/components/SeatsAvailabilityText";
 import { EventMetaBlock } from "@calcom/features/bookings/components/event-meta/Details";
 import { useTimePreferences } from "@calcom/features/bookings/lib";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -19,8 +21,9 @@ const TimezoneSelect = dynamic(() => import("@calcom/ui").then((mod) => mod.Time
 });
 
 export const EventMeta = () => {
-  const { timezone, setTimezone, timeFormat } = useTimePreferences();
+  const { setTimezone, timeFormat, timezone } = useTimePreferences();
   const selectedDuration = useBookerStore((state) => state.selectedDuration);
+  const setSelectedDuration = useBookerStore((state) => state.setSelectedDuration);
   const selectedTimeslot = useBookerStore((state) => state.selectedTimeslot);
   const bookerState = useBookerStore((state) => state.state);
   const bookingData = useBookerStore((state) => state.bookingData);
@@ -34,6 +37,13 @@ export const EventMeta = () => {
   const embedUiConfig = useEmbedUiConfig();
   const isEmbed = useIsEmbed();
   const hideEventTypeDetails = isEmbed ? embedUiConfig.hideEventTypeDetails : false;
+
+  useEffect(() => {
+    if (!selectedDuration && event?.length) {
+      setSelectedDuration(event.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event?.length, selectedDuration]);
 
   if (hideEventTypeDetails) {
     return null;
@@ -130,13 +140,12 @@ export const EventMeta = () => {
               <EventMetaBlock icon={User} className={`${colorClass}`}>
                 <div className="text-bookinghighlight flex items-start text-sm">
                   <p>
-                    {bookingSeatAttendeesQty ? eventTotalSeats - bookingSeatAttendeesQty : eventTotalSeats} /{" "}
-                    {eventTotalSeats}{" "}
-                    {t("seats_available", {
-                      count: bookingSeatAttendeesQty
-                        ? eventTotalSeats - bookingSeatAttendeesQty
-                        : eventTotalSeats,
-                    })}
+                    <SeatsAvailabilityText
+                      showExact={!!seatedEventData.showAvailableSeatsCount}
+                      totalSeats={eventTotalSeats}
+                      bookedSeats={bookingSeatAttendeesQty || 0}
+                      variant="fraction"
+                    />
                   </p>
                 </div>
               </EventMetaBlock>

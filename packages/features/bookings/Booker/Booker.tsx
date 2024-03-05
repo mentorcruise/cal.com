@@ -44,12 +44,13 @@ const BookerComponent = ({
   isTeamEvent,
   entity,
   duration,
+  hashedLink,
 }: BookerProps) => {
   /**
    * Prioritize dateSchedule load
    * Component will render but use data already fetched from here, and no duplicate requests will be made
    * */
-  useScheduleForEvent({
+  const schedule = useScheduleForEvent({
     prefetchNextMonth: false,
     username,
     eventSlug,
@@ -93,7 +94,7 @@ const BookerComponent = ({
   );
 
   const date = dayjs(selectedDate).format("YYYY-MM-DD");
-  const schedule = useScheduleForEvent({ prefetchNextMonth: true });
+
   const nonEmptyScheduleDays = useNonEmptyScheduleDays(schedule?.data?.slots).filter(
     (slot) => dayjs(selectedDate).diff(slot, "day") <= 0
   );
@@ -109,12 +110,13 @@ const BookerComponent = ({
       ? totalWeekDays
       : 0;
 
-  //Taking one more avaliable slot(extraDays + 1) to claculate the no of days in between, that next and prev button need to shift.
+  // Taking one more available slot(extraDays + 1) to calculate the no of days in between, that next and prev button need to shift.
   const availableSlots = nonEmptyScheduleDays.slice(0, extraDays + 1);
   if (nonEmptyScheduleDays.length !== 0)
     columnViewExtraDays.current =
       Math.abs(dayjs(selectedDate).diff(availableSlots[availableSlots.length - 2], "day")) + addonDays;
   const prefetchNextMonth =
+    layout === BookerLayouts.COLUMN_VIEW &&
     dayjs(date).month() !== dayjs(date).add(columnViewExtraDays.current, "day").month();
   const monthCount =
     dayjs(date).add(1, "month").month() !== dayjs(date).add(columnViewExtraDays.current, "day").month()
@@ -284,6 +286,7 @@ const BookerComponent = ({
                     setSeatedEventData({ ...seatedEventData, bookingUid: undefined, attendees: undefined });
                   }
                 }}
+                hashedLink={hashedLink}
               />
             </BookerSection>
 
@@ -316,7 +319,7 @@ const BookerComponent = ({
               className={classNames(
                 "border-subtle rtl:border-default flex h-full w-full flex-col overflow-x-auto px-5 py-3 pb-0 rtl:border-r ltr:md:border-l",
                 layout === BookerLayouts.MONTH_VIEW &&
-                  "scroll-bar h-full overflow-auto md:w-[var(--booker-timeslots-width)]",
+                  "h-full overflow-hidden md:w-[var(--booker-timeslots-width)]",
                 layout !== BookerLayouts.MONTH_VIEW && "sticky top-0"
               )}
               ref={timeslotsRef}
@@ -327,6 +330,7 @@ const BookerComponent = ({
                 prefetchNextMonth={prefetchNextMonth}
                 monthCount={monthCount}
                 seatsPerTimeSlot={event.data?.seatsPerTimeSlot}
+                showAvailableSeatsCount={event.data?.seatsShowAvailabilityCount}
               />
             </BookerSection>
           </AnimatePresence>
