@@ -284,8 +284,8 @@ async function postHandler(req: NextApiRequest) {
   await checkPermissions(req);
 
   if (parsedBody.parentId) {
-    await checkParentEventOwnership(parsedBody.parentId, userId);
-    await checkUserMembership(parsedBody.parentId, parsedBody.userId);
+    await checkParentEventOwnership(req);
+    await checkUserMembership(req);
   }
 
   if (isAdmin && parsedBody.userId) {
@@ -311,13 +311,14 @@ async function checkPermissions(req: NextApiRequest) {
   const { isAdmin } = req;
   const body = schemaEventTypeCreateBodyParams.parse(req.body);
   /* Non-admin users can only create event types for themselves */
-  if (!isAdmin && body.userId)
+  if (!isAdmin && body.teamId)
     throw new HttpError({
       statusCode: 401,
-      message: "ADMIN required for `userId`",
+      message: "ADMIN required for `teamId`",
     });
-  /* Admin users are required to pass in a userId */
-  if (isAdmin && !body.userId) throw new HttpError({ statusCode: 400, message: "`userId` required" });
+  /* Admin users are required to pass in a userId or teamId */
+  if (isAdmin && !body.userId && !body.teamId)
+    throw new HttpError({ statusCode: 400, message: "`userId` or `teamId` required" });
 }
 
 export default defaultResponder(postHandler);
