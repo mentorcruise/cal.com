@@ -607,39 +607,39 @@ Cal.com is an [open startup](https://cal.com/open) and [Jitsu](https://github.co
 
 Go into staging branch
 
-```
+```shell
 git checkout staging
 ```
 
 Pull upstream production branch
 
-```
+```shell
 git pull upstream production
 ```
 
 Alternatively, update to a specific version
 
-```
+```shell
 git fetch upstream tag v3.8.4 && git merge FETCH_HEAD
 ```
 
 To deploy the version in production, do this
 
-```
+```shell
 git checkout main
 git merge staging
 ```
 
 When deploying, you may need to migrate the staging or production database. To do so:
 
-**Staging**
+### Staging
 
-```
-DATABASE_URL=postgresql://doadmin:AVNS_WeEEpRuu8jjA55Qs1am@calcom-db-do-user-1744194-0.b.db.ondigitalocean.com:25061/Staging-Bouncer?pgbouncer=true yarn workspace @calcom/prisma db-deploy
+```shell
+DATABASE_URL=postgresql://doadmin:AVNS_WeEEpRuu8jjA55Qs1am@calcom-db-feb-1-backup-do-user-1744194-0.c.db.ondigitalocean.com:25061/Staging-Bouncer?pgbouncer=true yarn workspace @calcom/prisma db-deploy
 ```
 
-**Production (Caution)**
+### Production (Caution)
 
-```
-DATABASE_URL=postgresql://doadmin:AVNS_WeEEpRuu8jjA55Qs1am@calcom-db-do-user-1744194-0.b.db.ondigitalocean.com:25061/Bouncer?pgbouncer=true yarn workspace @calcom/prisma db-deploy
+```shell
+DATABASE_URL=postgresql://doadmin:AVNS_WeEEpRuu8jjA55Qs1am@calcom-db-feb-1-backup-do-user-1744194-0.c.db.ondigitalocean.com:25061/Bouncer?pgbouncer=true yarn workspace @calcom/prisma db-deploy
 ```
