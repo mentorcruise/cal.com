@@ -93,7 +93,7 @@ export const schemaUserBaseBodyParams = User.pick({
 // for example making weekStart only accept weekdays as input
 const schemaUserEditParams = z.object({
   name: z.string().optional(),
-  email: z.string().email(),
+  email: z.string().email().toLowerCase(),
   username: usernameSchema,
   weekStart: z.nativeEnum(weekdays).optional(),
   brandColor: z.string().min(4).max(9).regex(/^#/).optional(),
@@ -115,7 +115,7 @@ const schemaUserEditParams = z.object({
 // merging both BaseBodyParams with RequiredParams, and omiting whatever we want at the end.
 
 const schemaUserCreateParams = z.object({
-  email: z.string().email(),
+  email: z.string().email().toLowerCase(),
   username: usernameSchema,
   weekStart: z.nativeEnum(weekdays).optional(),
   brandColor: z.string().min(4).max(9).regex(/^#/).optional(),

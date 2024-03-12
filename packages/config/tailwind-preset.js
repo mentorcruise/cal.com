@@ -30,16 +30,16 @@ module.exports = {
         brand: {
           // Figure out a way to automate this for self hosted users
           // Goto https://javisperez.github.io/tailwindcolorshades to generate your brand color
-          '50': '#f3f5f7',
-          '100': '#e8eaee',
-          '200': '#c5cbd6',
-          '300': '#a2abbd',
-          '400': '#5d6d8b',
-          '500': '#172e59',
-          '600': '#152950',
-          '700': '#112343',
-          '800': '#0e1c35',
-          '900': '#0b172c',
+          50: "#f3f5f7",
+          100: "#e8eaee",
+          200: "#c5cbd6",
+          300: "#a2abbd",
+          400: "#5d6d8b",
+          500: "#172e59",
+          600: "#152950",
+          700: "#112343",
+          800: "#0e1c35",
+          900: "#0b172c",
           DEFAULT: "var(--brand-color)",
           default: "var(--cal-brand,'#111827')",
           emphasis: "var(--cal-brand-emphasis,'#101010')",
@@ -117,6 +117,7 @@ module.exports = {
       },
       animation: {
         "fade-in-up": "fade-in-up 600ms var(--animation-delay, 0ms) cubic-bezier(.21,1.02,.73,1) forwards",
+        "fade-in-bottom": "fade-in-bottom cubic-bezier(.21,1.02,.73,1) forwards",
         spinning: "spinning 0.75s linear infinite",
       },
       boxShadow: {
@@ -162,6 +163,7 @@ module.exports = {
     },
   },
   plugins: [
+    require("@todesktop/tailwind-variants"),
     require("@tailwindcss/forms"),
     require("@tailwindcss/typography"),
     require("tailwind-scrollbar")({ nocompatible: true }),
