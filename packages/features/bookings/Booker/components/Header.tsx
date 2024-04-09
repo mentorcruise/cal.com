@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useCallback, useMemo } from "react";
 import { shallow } from "zustand/shallow";
 
 import dayjs from "@calcom/dayjs";
+import { useIsEmbed } from "@calcom/embed-core/embed-iframe";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { BookerLayouts } from "@calcom/prisma/zod-utils";
@@ -19,19 +19,20 @@ export function Header({
   isMobile,
   enabledLayouts,
   nextSlots,
-  username,
   eventSlug,
+  isMyLink,
+  renderOverlay,
 }: {
   extraDays: number;
   isMobile: boolean;
   enabledLayouts: BookerLayouts[];
   nextSlots: number;
-  username: string;
   eventSlug: string;
+  isMyLink: boolean;
+  renderOverlay?: () => JSX.Element | null;
 }) {
   const { t, i18n } = useLocale();
-  const session = useSession();
-
+  const isEmbed = useIsEmbed();
   const [layout, setLayout] = useBookerStore((state) => [state.layout, state.setLayout], shallow);
   const selectedDateString = useBookerStore((state) => state.selectedDate);
   const setSelectedDate = useBookerStore((state) => state.setSelectedDate);
@@ -54,20 +55,11 @@ export function Header({
 
   if (isMobile || !enabledLayouts) return null;
 
-  // Only reason we create this component, is because it is used 3 times in this component,
-  // and this way we can't forget to update one of the props in all places :)
-  const LayoutToggleWithData = () => {
-    return enabledLayouts.length <= 1 ? null : (
-      <LayoutToggle onLayoutToggle={onLayoutToggle} layout={layout} enabledLayouts={enabledLayouts} />
-    );
-  };
-  const isMyLink = username === session?.data?.user.username; // TODO: check for if the user is the owner of the link
-
   // In month view we only show the layout toggle.
   if (isMonthView) {
     return (
       <div className="flex gap-2">
-        {isMyLink && (
+        {isMyLink && !isEmbed ? (
           <Tooltip content={t("troubleshooter_tooltip")} side="bottom">
             <Button
               color="primary"
@@ -76,8 +68,14 @@ export function Header({
               {t("need_help")}
             </Button>
           </Tooltip>
+        ) : (
+          renderOverlay?.()
         )}
-        <LayoutToggleWithData />
+        <LayoutToggleWithData
+          layout={layout}
+          enabledLayouts={enabledLayouts}
+          onLayoutToggle={onLayoutToggle}
+        />
       </div>
     );
   }
@@ -90,7 +88,7 @@ export function Header({
   const isSameYear = () => {
     return selectedDate.format("YYYY") === endDate.format("YYYY");
   };
-  const formattedMonth = new Intl.DateTimeFormat(i18n.language, { month: "short" });
+  const formattedMonth = new Intl.DateTimeFormat(i18n.language ?? "en", { month: "short" });
   const FormattedSelectedDateRange = () => {
     return (
       <h3 className="min-w-[150px] text-base font-semibold leading-4">
@@ -136,9 +134,14 @@ export function Header({
         </ButtonGroup>
       </div>
       <div className="ml-auto flex gap-2">
+        {renderOverlay?.()}
         <TimeFormatToggle />
         <div className="fixed top-4 ltr:right-4 rtl:left-4">
-          <LayoutToggleWithData />
+          <LayoutToggleWithData
+            layout={layout}
+            enabledLayouts={enabledLayouts}
+            onLayoutToggle={onLayoutToggle}
+          />
         </div>
         {/*
           This second layout toggle is hidden, but needed to reserve the correct spot in the DIV
@@ -148,7 +151,11 @@ export function Header({
           while it actually already was on place. That's why we have this element twice.
         */}
         <div className="pointer-events-none opacity-0" aria-hidden>
-          <LayoutToggleWithData />
+          <LayoutToggleWithData
+            layout={layout}
+            enabledLayouts={enabledLayouts}
+            onLayoutToggle={onLayoutToggle}
+          />
         </div>
       </div>
     </div>
@@ -164,7 +171,7 @@ const LayoutToggle = ({
   layout: string;
   enabledLayouts?: BookerLayouts[];
 }) => {
-  const isEmbed = typeof window !== "undefined" && window?.isEmbed?.();
+  const isEmbed = useIsEmbed();
 
   const { t } = useLocale();
 
@@ -195,4 +202,18 @@ const LayoutToggle = ({
   }
 
   return <ToggleGroup onValueChange={onLayoutToggle} defaultValue={layout} options={layoutOptions} />;
+};
+
+const LayoutToggleWithData = ({
+  enabledLayouts,
+  onLayoutToggle,
+  layout,
+}: {
+  enabledLayouts: BookerLayouts[];
+  onLayoutToggle: (layout: string) => void;
+  layout: string;
+}) => {
+  return enabledLayouts.length <= 1 ? null : (
+    <LayoutToggle onLayoutToggle={onLayoutToggle} layout={layout} enabledLayouts={enabledLayouts} />
+  );
 };

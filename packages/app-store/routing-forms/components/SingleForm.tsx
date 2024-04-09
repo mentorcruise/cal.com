@@ -9,12 +9,7 @@ import { ShellMain } from "@calcom/features/shell/Shell";
 import useApp from "@calcom/lib/hooks/useApp";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
-import type {
-  AppGetServerSidePropsContext,
-  AppPrisma,
-  AppSsrInit,
-  AppUser,
-} from "@calcom/types/AppGetServerSideProps";
+import type { inferSSRProps } from "@calcom/types/inferSSRProps";
 import {
   Alert,
   Badge,
@@ -44,14 +39,15 @@ import {
   MessageCircle,
 } from "@calcom/ui/components/icon";
 
+import { getAbsoluteEventTypeRedirectUrl } from "../getEventTypeRedirectUrl";
 import { RoutingPages } from "../lib/RoutingPages";
-import { getSerializableForm } from "../lib/getSerializableForm";
 import { isFallbackRoute } from "../lib/isFallbackRoute";
 import { processRoute } from "../lib/processRoute";
 import type { Response, Route, SerializableForm } from "../types/types";
 import { FormAction, FormActionsDropdown, FormActionsProvider } from "./FormActions";
 import FormInputFields from "./FormInputFields";
 import RoutingNavBar from "./RoutingNavBar";
+import { getServerSidePropsForSingleFormView } from "./getServerSidePropsSingleForm";
 
 type RoutingForm = SerializableForm<App_RoutingForms_Form>;
 
@@ -71,7 +67,7 @@ const Actions = ({
 }: {
   form: RoutingFormWithResponseCount;
   mutation: {
-    isLoading: boolean;
+    isPending: boolean;
   };
 }) => {
   const { t } = useLocale();
@@ -224,7 +220,7 @@ const Actions = ({
         </FormActionsDropdown>
       </div>
       <VerticalDivider />
-      <Button data-testid="update-form" loading={mutation.isLoading} type="submit" color="primary">
+      <Button data-testid="update-form" loading={mutation.isPending} type="submit" color="primary">
         {t("save")}
       </Button>
     </div>
@@ -239,9 +235,12 @@ type SingleFormComponentProps = {
     appUrl: string;
     hookForm: UseFormReturn<RoutingFormWithResponseCount>;
   }>;
+  enrichedWithUserProfileForm?: inferSSRProps<
+    typeof getServerSidePropsForSingleFormView
+  >["enrichedWithUserProfileForm"];
 };
 
-function SingleForm({ form, appUrl, Page }: SingleFormComponentProps) {
+function SingleForm({ form, appUrl, Page, enrichedWithUserProfileForm }: SingleFormComponentProps) {
   const utils = trpc.useContext();
   const { t } = useLocale();
 
@@ -249,9 +248,21 @@ function SingleForm({ form, appUrl, Page }: SingleFormComponentProps) {
   const [response, setResponse] = useState<Response>({});
   const [decidedAction, setDecidedAction] = useState<Route["action"] | null>(null);
   const [skipFirstUpdate, setSkipFirstUpdate] = useState(true);
+  const [eventTypeUrl, setEventTypeUrl] = useState("");
 
   function testRouting() {
     const action = processRoute({ form, response });
+    if (action.type === "eventTypeRedirectUrl") {
+      setEventTypeUrl(
+        enrichedWithUserProfileForm
+          ? getAbsoluteEventTypeRedirectUrl({
+              eventTypeRedirectUrl: action.value,
+              form: enrichedWithUserProfileForm,
+              allURLSearchParams: new URLSearchParams(),
+            })
+          : ""
+      );
+    }
     setDecidedAction(action);
   }
 
@@ -364,7 +375,7 @@ function SingleForm({ form, appUrl, Page }: SingleFormComponentProps) {
                   {form.routers.length ? (
                     <div className="mt-6">
                       <div className="text-emphasis mb-2 block text-sm font-semibold leading-none ">
-                        Routers
+                        {t("routers")}
                       </div>
                       <p className="text-default -mt-1 text-xs leading-normal">
                         {t("modifications_in_fields_warning")}
@@ -461,9 +472,9 @@ function SingleForm({ form, appUrl, Page }: SingleFormComponentProps) {
                       {RoutingPages.map((page) => {
                         if (page.value !== decidedAction.type) return null;
                         return (
-                          <div key={page.value} data-testid="test-routing-result-type">
+                          <span key={page.value} data-testid="test-routing-result-type">
                             {page.label}
-                          </div>
+                          </span>
                         );
                       })}
                       :{" "}
@@ -490,7 +501,7 @@ function SingleForm({ form, appUrl, Page }: SingleFormComponentProps) {
                         <span className="text-default underline">
                           <a
                             target="_blank"
-                            href={`/${decidedAction.value}`}
+                            href={eventTypeUrl}
                             rel="noreferrer"
                             data-testid="test-routing-result">
                             {decidedAction.value}
@@ -524,7 +535,7 @@ function SingleForm({ form, appUrl, Page }: SingleFormComponentProps) {
 }
 
 export default function SingleFormWrapper({ form: _form, ...props }: SingleFormComponentProps) {
-  const { data: form, isLoading } = trpc.viewer.appRoutingForms.formQuery.useQuery(
+  const { data: form, isPending } = trpc.viewer.appRoutingForms.formQuery.useQuery(
     { id: _form.id },
     {
       initialData: _form,
@@ -533,7 +544,7 @@ export default function SingleFormWrapper({ form: _form, ...props }: SingleFormC
   );
   const { t } = useLocale();
 
-  if (isLoading) {
+  if (isPending) {
     // It shouldn't be possible because we are passing the data from SSR to it as initialData. So, no need for skeleton here
     return null;
   }
@@ -548,70 +559,4 @@ export default function SingleFormWrapper({ form: _form, ...props }: SingleFormC
   );
 }
 
-export const getServerSidePropsForSingleFormView = async function getServerSidePropsForSingleFormView(
-  context: AppGetServerSidePropsContext,
-  prisma: AppPrisma,
-  user: AppUser,
-  ssrInit: AppSsrInit
-) {
-  const ssr = await ssrInit(context);
-
-  if (!user) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: "/auth/login",
-      },
-    };
-  }
-  const { params } = context;
-  if (!params) {
-    return {
-      notFound: true,
-    };
-  }
-  const formId = params.appPages[0];
-  if (!formId || params.appPages.length > 1) {
-    return {
-      notFound: true,
-    };
-  }
-
-  const isFormCreateEditAllowed = (await import("../lib/isFormCreateEditAllowed")).isFormCreateEditAllowed;
-  if (!(await isFormCreateEditAllowed({ userId: user.id, formId, targetTeamId: null }))) {
-    return {
-      notFound: true,
-    };
-  }
-
-  const form = await prisma.app_RoutingForms_Form.findUnique({
-    where: {
-      id: formId,
-    },
-    include: {
-      team: {
-        select: {
-          name: true,
-          slug: true,
-        },
-      },
-      _count: {
-        select: {
-          responses: true,
-        },
-      },
-    },
-  });
-  if (!form) {
-    return {
-      notFound: true,
-    };
-  }
-
-  return {
-    props: {
-      trpcState: ssr.dehydrate(),
-      form: await getSerializableForm({ form }),
-    },
-  };
-};
+export { getServerSidePropsForSingleFormView };

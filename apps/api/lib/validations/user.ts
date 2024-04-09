@@ -74,6 +74,7 @@ export const schemaUserBaseBodyParams = User.pick({
   timeZone: true,
   weekStart: true,
   theme: true,
+  appTheme: true,
   defaultScheduleId: true,
   locale: true,
   hideBranding: true,
@@ -101,6 +102,7 @@ const schemaUserEditParams = z.object({
   hideBranding: z.boolean().optional(),
   timeZone: timeZone.optional(),
   theme: z.nativeEnum(theme).optional().nullable(),
+  appTheme: z.nativeEnum(theme).optional().nullable(),
   timeFormat: z.nativeEnum(timeFormat).optional(),
   defaultScheduleId: z
     .number()
@@ -123,6 +125,7 @@ const schemaUserCreateParams = z.object({
   hideBranding: z.boolean().optional(),
   timeZone: timeZone.optional(),
   theme: z.nativeEnum(theme).optional().nullable(),
+  appTheme: z.nativeEnum(theme).optional().nullable(),
   timeFormat: z.nativeEnum(timeFormat).optional(),
   defaultScheduleId: z
     .number()
@@ -161,6 +164,7 @@ export const schemaUserReadPublic = User.pick({
   weekStart: true,
   endTime: true,
   bufferTime: true,
+  appTheme: true,
   theme: true,
   defaultScheduleId: true,
   locale: true,
