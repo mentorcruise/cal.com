@@ -31,7 +31,7 @@ export default function Page({ samlTenantID, samlProductID }: inferSSRProps<type
       {
         callbackUrl: "/",
       },
-      { tenant: samlTenantID, product: samlProductID }
+      { tenant: "Cal.com", product: "Cal.com" }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
