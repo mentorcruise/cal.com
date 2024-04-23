@@ -193,11 +193,8 @@ export const updateProfileHandler = async ({ ctx, input }: UpdateProfileOptions)
       });
     } catch {}
     // Only validate if we're changing email
-    // data.identityProvider = IdentityProvider.CAL;
-    // data.identityProviderId = null;
-  } else if (hasEmailChangedOnCalProvider) {
-    // when the email changes, the user needs to sign in again.
-    signOutUser = true;
+    //data.identityProvider = IdentityProvider.CAL;
+    //data.identityProviderId = null;
   }
 
   // if defined AND a base 64 string, upload and set the avatar URL
