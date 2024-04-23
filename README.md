@@ -648,3 +648,4 @@ DATABASE_URL=postgresql://doadmin:<password>@calcom-db-feb-1-backup-do-user-1744
 ```shell
 DATABASE_URL=postgresql://doadmin:<password>@calcom-db-feb-1-backup-do-user-1744194-0.c.db.ondigitalocean.com:25061/Bouncer?pgbouncer=true yarn workspace @calcom/prisma db-deploy
 ```
+
