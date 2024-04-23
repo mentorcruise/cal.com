@@ -4,7 +4,16 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { localStorage } from "@calcom/lib/webstorage";
 import { Card } from "@calcom/ui";
 
-export const tips = [];
+// type
+export interface Tip {
+  id: number;
+  thumbnailUrl: string;
+  mediaLink: string;
+  title: string;
+  description: string;
+  href: string;
+}
+export const tips = [] as Tip[];
 
 const reversedTips = tips.slice(0).reverse();
 
