@@ -193,9 +193,9 @@ export default function AvailabilityPage() {
   const isOrgAndPrivate = data?.isOrganization && data.isPrivate;
   const toggleGroupOptions = [{ value: "mine", label: t("my_availability") }];
 
-  if (!isOrgAndPrivate || isOrgAdminOrOwner) {
-    toggleGroupOptions.push({ value: "team", label: t("team_availability") });
-  }
+  // if (!isOrgAndPrivate || isOrgAdminOrOwner) {
+  //   toggleGroupOptions.push({ value: "team", label: t("team_availability") });
+  //}
 
   return (
     <div>

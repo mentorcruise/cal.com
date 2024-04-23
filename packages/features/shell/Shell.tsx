@@ -39,7 +39,13 @@ import VerifyEmailBanner, {
   type VerifyEmailBannerProps,
 } from "@calcom/features/users/components/VerifyEmailBanner";
 import classNames from "@calcom/lib/classNames";
-import { APP_NAME, IS_VISUAL_REGRESSION_TESTING, TOP_BANNER_HEIGHT, WEBAPP_URL } from "@calcom/lib/constants";
+import {
+  APP_NAME,
+  IS_VISUAL_REGRESSION_TESTING,
+  TOP_BANNER_HEIGHT,
+  WEBAPP_URL,
+  ENABLE_PROFILE_SWITCHER,
+} from "@calcom/lib/constants";
 import { useFormbricks } from "@calcom/lib/formbricks-client";
 import getBrandColours from "@calcom/lib/getBrandColours";
 import { useBookerUrl } from "@calcom/lib/hooks/useBookerUrl";
