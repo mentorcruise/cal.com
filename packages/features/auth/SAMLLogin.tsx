@@ -6,7 +6,6 @@ import z from "zod";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { trpc } from "@calcom/trpc/react";
 import { Button } from "@calcom/ui";
-import { Lock } from "@calcom/ui/components/icon";
 
 interface Props {
   samlTenantID: string;
@@ -33,7 +32,7 @@ export function SAMLLogin({ samlTenantID, samlProductID, setErrorMessage }: Prop
 
   return (
     <Button
-      StartIcon={Lock}
+      StartIcon="lock"
       color="secondary"
       data-testid="saml"
       className="flex w-full justify-center"

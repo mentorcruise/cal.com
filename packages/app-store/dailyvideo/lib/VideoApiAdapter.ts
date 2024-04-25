@@ -107,8 +107,8 @@ const DailyVideoApiAdapter = (): VideoApiAdapter => {
 
   const translateEvent = async (event: CalendarEvent) => {
     // Documentation at: https://docs.daily.co/reference#list-rooms
-    // added a 1 hour buffer for room expiration
-    const exp = Math.round(new Date(event.endTime).getTime() / 1000) + 60 * 60;
+    // Adds 14 days from the end of the booking as the expiration date
+    const exp = Math.round(new Date(event.endTime).getTime() / 1000) + 60 * 60 * 24 * 14;
     const { scale_plan: scalePlan } = await getDailyAppKeys();
     const hasTeamPlan = await prisma.membership.findFirst({
       where: {
@@ -158,6 +158,7 @@ const DailyVideoApiAdapter = (): VideoApiAdapter => {
         enable_chat: true,
         exp: exp,
         enable_recording: "cloud",
+        start_video_off: true,
       },
     };
 
@@ -200,7 +201,7 @@ const DailyVideoApiAdapter = (): VideoApiAdapter => {
     createInstantCalVideoRoom: (endTime: string) => createInstantMeeting(endTime),
     getRecordingDownloadLink: async (recordingId: string): Promise<GetAccessLinkResponseSchema> => {
       try {
-        const res = await fetcher(`/recordings/${recordingId}/access-link?valid_for_secs=172800`).then(
+        const res = await fetcher(`/recordings/${recordingId}/access-link?valid_for_secs=43200`).then(
           getAccessLinkResponseSchema.parse
         );
         return Promise.resolve(res);

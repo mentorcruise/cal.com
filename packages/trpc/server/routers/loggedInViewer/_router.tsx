@@ -1,5 +1,6 @@
 import authedProcedure from "../../procedures/authedProcedure";
 import { router } from "../../trpc";
+import { ZAddSecondaryEmailInputSchema } from "./addSecondaryEmail.schema";
 import { ZAppByIdInputSchema } from "./appById.schema";
 import { ZAppCredentialsByTypeInputSchema } from "./appCredentialsByType.schema";
 import { ZAwayInputSchema } from "./away.schema";
@@ -13,6 +14,8 @@ import { ZGetDownloadLinkOfCalVideoRecordingsInputSchema } from "./getDownloadLi
 import { ZIntegrationsInputSchema } from "./integrations.schema";
 import { ZLocationOptionsInputSchema } from "./locationOptions.schema";
 import { ZOutOfOfficeInputSchema, ZOutOfOfficeDelete } from "./outOfOffice.schema";
+import { me } from "./procedures/me";
+import { teamsAndUserProfilesQuery } from "./procedures/teamsAndUserProfilesQuery";
 import { ZRoutingFormOrderInputSchema } from "./routingFormOrder.schema";
 import { ZSetDestinationCalendarInputSchema } from "./setDestinationCalendar.schema";
 import { ZSubmitFeedbackInputSchema } from "./submitFeedback.schema";
@@ -51,23 +54,15 @@ type AppsRouterHandlerCache = {
   outOfOfficeCreate?: typeof import("./outOfOffice.handler").outOfOfficeCreate;
   outOfOfficeEntriesList?: typeof import("./outOfOffice.handler").outOfOfficeEntriesList;
   outOfOfficeEntryDelete?: typeof import("./outOfOffice.handler").outOfOfficeEntryDelete;
+  addSecondaryEmail?: typeof import("./addSecondaryEmail.handler").addSecondaryEmailHandler;
+  getTravelSchedules?: typeof import("./getTravelSchedules.handler").getTravelSchedulesHandler;
+  outOfOfficeReasonList?: typeof import("./outOfOfficeReasons.handler").outOfOfficeReasonList;
 };
 
 const UNSTABLE_HANDLER_CACHE: AppsRouterHandlerCache = {};
 
 export const loggedInViewerRouter = router({
-  me: authedProcedure.query(async ({ ctx }) => {
-    if (!UNSTABLE_HANDLER_CACHE.me) {
-      UNSTABLE_HANDLER_CACHE.me = (await import("./me.handler")).meHandler;
-    }
-
-    // Unreachable code but required for type safety
-    if (!UNSTABLE_HANDLER_CACHE.me) {
-      throw new Error("Failed to load handler");
-    }
-
-    return UNSTABLE_HANDLER_CACHE.me({ ctx });
-  }),
+  me,
 
   avatar: authedProcedure.query(async ({ ctx }) => {
     if (!UNSTABLE_HANDLER_CACHE.avatar) {
@@ -424,20 +419,7 @@ export const loggedInViewerRouter = router({
 
     return UNSTABLE_HANDLER_CACHE.shouldVerifyEmail({ ctx });
   }),
-  teamsAndUserProfilesQuery: authedProcedure.query(async ({ ctx }) => {
-    if (!UNSTABLE_HANDLER_CACHE.teamsAndUserProfilesQuery) {
-      UNSTABLE_HANDLER_CACHE.teamsAndUserProfilesQuery = (
-        await import("./teamsAndUserProfilesQuery.handler")
-      ).teamsAndUserProfilesQuery;
-    }
-
-    // Unreachable code but required for type safety
-    if (!UNSTABLE_HANDLER_CACHE.teamsAndUserProfilesQuery) {
-      throw new Error("Failed to load handler");
-    }
-
-    return UNSTABLE_HANDLER_CACHE.teamsAndUserProfilesQuery({ ctx });
-  }),
+  teamsAndUserProfilesQuery,
   connectAndJoin: authedProcedure.input(ZConnectAndJoinInputSchema).mutation(async ({ ctx, input }) => {
     if (!UNSTABLE_HANDLER_CACHE.connectAndJoin) {
       UNSTABLE_HANDLER_CACHE.connectAndJoin = (await import("./connectAndJoin.handler")).Handler;
@@ -489,5 +471,47 @@ export const loggedInViewerRouter = router({
     }
 
     return UNSTABLE_HANDLER_CACHE.outOfOfficeEntryDelete({ ctx, input });
+  }),
+  addSecondaryEmail: authedProcedure.input(ZAddSecondaryEmailInputSchema).mutation(async ({ ctx, input }) => {
+    if (!UNSTABLE_HANDLER_CACHE.addSecondaryEmail) {
+      UNSTABLE_HANDLER_CACHE.addSecondaryEmail = (
+        await import("./addSecondaryEmail.handler")
+      ).addSecondaryEmailHandler;
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.addSecondaryEmail) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.addSecondaryEmail({ ctx, input });
+  }),
+  getTravelSchedules: authedProcedure.query(async ({ ctx }) => {
+    if (!UNSTABLE_HANDLER_CACHE.getTravelSchedules) {
+      UNSTABLE_HANDLER_CACHE.getTravelSchedules = (
+        await import("./getTravelSchedules.handler")
+      ).getTravelSchedulesHandler;
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.getTravelSchedules) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.getTravelSchedules({ ctx });
+  }),
+  outOfOfficeReasonList: authedProcedure.query(async () => {
+    if (!UNSTABLE_HANDLER_CACHE.outOfOfficeReasonList) {
+      UNSTABLE_HANDLER_CACHE.outOfOfficeReasonList = (
+        await import("./outOfOfficeReasons.handler")
+      ).outOfOfficeReasonList;
+    }
+
+    // Unreachable code but required for type safety
+    if (!UNSTABLE_HANDLER_CACHE.outOfOfficeReasonList) {
+      throw new Error("Failed to load handler");
+    }
+
+    return UNSTABLE_HANDLER_CACHE.outOfOfficeReasonList();
   }),
 });

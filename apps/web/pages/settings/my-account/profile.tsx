@@ -1,10 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+// eslint-disable-next-line no-restricted-imports
+import { pick } from "lodash";
 import { signOut, useSession } from "next-auth/react";
 import type { BaseSyntheticEvent } from "react";
 import React, { useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
@@ -17,8 +19,8 @@ import { md } from "@calcom/lib/markdownIt";
 import turndown from "@calcom/lib/turndownService";
 import { IdentityProvider } from "@calcom/prisma/enums";
 import type { TRPCClientErrorLike } from "@calcom/trpc/client";
-import { trpc } from "@calcom/trpc/react";
 import type { RouterOutputs } from "@calcom/trpc/react";
+import { trpc } from "@calcom/trpc/react";
 import type { AppRouter } from "@calcom/trpc/server/routers/_app";
 import type { Ensure } from "@calcom/types/utils";
 import {
@@ -41,12 +43,13 @@ import {
   SkeletonContainer,
   SkeletonText,
   TextField,
+  UserAvatar,
 } from "@calcom/ui";
-import { UserAvatar } from "@calcom/ui";
-import { AlertTriangle, Trash2 } from "@calcom/ui/components/icon";
 
 import PageWrapper from "@components/PageWrapper";
 import TwoFactor from "@components/auth/TwoFactor";
+import SecondaryEmailConfirmModal from "@components/settings/SecondaryEmailConfirmModal";
+import SecondaryEmailModal from "@components/settings/SecondaryEmailModal";
 import { UsernameAvailabilityField } from "@components/ui/UsernameAvailability";
 
 const SkeletonLoader = ({ title, description }: { title: string; description: string }) => {
@@ -72,40 +75,45 @@ interface DeleteAccountValues {
   totpCode: string;
 }
 
-type FormValues = {
+type Email = {
+  id: number;
+  email: string;
+  emailVerified: string | null;
+  emailPrimary: boolean;
+};
+
+export type FormValues = {
   username: string;
   avatar: string;
   name: string;
   email: string;
   bio: string;
+  secondaryEmails: Email[];
 };
 
 const ProfileView = () => {
   const { t } = useLocale();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const { update } = useSession();
-  const { data: user, isLoading } = trpc.viewer.me.useQuery();
+  const { data: user, isPending } = trpc.viewer.me.useQuery({ includePasswordAdded: true });
 
   const { data: avatarData } = trpc.viewer.avatar.useQuery(undefined, {
-    enabled: !isLoading && !user?.avatarUrl,
+    enabled: !isPending && !user?.avatarUrl,
   });
 
   const updateProfileMutation = trpc.viewer.updateProfile.useMutation({
     onSuccess: async (res) => {
       await update(res);
-      showToast(t("settings_updated_successfully"), "success");
+      utils.viewer.me.invalidate();
+      utils.viewer.avatar.invalidate();
+      utils.viewer.shouldVerifyEmail.invalidate();
 
-      // signout user only in case of password reset
-      if (res.signOutUser && tempFormValues && res.passwordReset) {
-        showToast(t("password_reset_email", { email: tempFormValues.email }), "success");
-        await signOut({ callbackUrl: "/auth/logout?passReset=true" });
+      if (res.hasEmailBeenChanged && res.sendEmailVerification) {
+        showToast(t("change_of_email_toast", { email: tempFormValues?.email }), "success");
       } else {
-        utils.viewer.me.invalidate();
-        utils.viewer.avatar.invalidate();
-        utils.viewer.shouldVerifyEmail.invalidate();
+        showToast(t("settings_updated_successfully"), "success");
       }
 
-      setConfirmAuthEmailChangeWarningDialogOpen(false);
       setTempFormValues(null);
     },
     onError: (e) => {
@@ -122,11 +130,27 @@ const ProfileView = () => {
     },
   });
 
+  const addSecondaryEmailMutation = trpc.viewer.addSecondaryEmail.useMutation({
+    onSuccess: (res) => {
+      setShowSecondaryEmailModalOpen(false);
+      setNewlyAddedSecondaryEmail(res?.data?.email);
+      utils.viewer.me.invalidate();
+    },
+    onError: (error) => {
+      setSecondaryEmailAddErrorMessage(error?.message || "");
+    },
+  });
+
+  const resendVerifyEmailMutation = trpc.viewer.auth.resendVerifyEmail.useMutation();
+
   const [confirmPasswordOpen, setConfirmPasswordOpen] = useState(false);
-  const [tempFormValues, setTempFormValues] = useState<FormValues | null>(null);
+  const [tempFormValues, setTempFormValues] = useState<ExtendedFormValues | null>(null);
   const [confirmPasswordErrorMessage, setConfirmPasswordDeleteErrorMessage] = useState("");
-  const [confirmAuthEmailChangeWarningDialogOpen, setConfirmAuthEmailChangeWarningDialogOpen] =
-    useState(false);
+  const [showCreateAccountPasswordDialog, setShowCreateAccountPasswordDialog] = useState(false);
+  const [showAccountDisconnectWarning, setShowAccountDisconnectWarning] = useState(false);
+  const [showSecondaryEmailModalOpen, setShowSecondaryEmailModalOpen] = useState(false);
+  const [secondaryEmailAddErrorMessage, setSecondaryEmailAddErrorMessage] = useState("");
+  const [newlyAddedSecondaryEmail, setNewlyAddedSecondaryEmail] = useState<undefined | string>(undefined);
 
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [hasDeleteErrors, setHasDeleteErrors] = useState(false);
@@ -183,12 +207,6 @@ const ProfileView = () => {
     confirmPasswordMutation.mutate({ passwordInput: password });
   };
 
-  const onConfirmAuthEmailChange = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
-    e.preventDefault();
-
-    if (tempFormValues) updateProfileMutation.mutate(tempFormValues);
-  };
-
   const onConfirmButton = (e: Event | React.MouseEvent<HTMLElement, MouseEvent>) => {
     e.preventDefault();
     if (isCALIdentityProvider) {
@@ -222,18 +240,36 @@ const ProfileView = () => {
     [ErrorCode.ThirdPartyIdentityProviderEnabled]: t("account_created_with_identity_provider"),
   };
 
-  if (isLoading || !user) {
+  if (isPending || !user) {
     return (
       <SkeletonLoader title={t("profile")} description={t("profile_description", { appName: APP_NAME })} />
     );
   }
 
+  const userEmail = user.email || "";
   const defaultValues = {
     username: user.username || "",
-    avatar: getUserAvatarUrl(user),
+    avatar: getUserAvatarUrl({
+      ...user,
+      profile: user.profile,
+    }),
     name: user.name || "",
-    email: user.email || "",
+    email: userEmail,
     bio: user.bio || "",
+    // We add the primary email as the first item in the list
+    secondaryEmails: [
+      {
+        id: 0,
+        email: userEmail,
+        emailVerified: user.emailVerified?.toString() || null,
+        emailPrimary: true,
+      },
+      ...(user.secondaryEmails || []).map((secondaryEmail) => ({
+        ...secondaryEmail,
+        emailVerified: secondaryEmail.emailVerified?.toString() || null,
+        emailPrimary: false,
+      })),
+    ],
   };
 
   return (
@@ -246,7 +282,7 @@ const ProfileView = () => {
       <ProfileForm
         key={JSON.stringify(defaultValues)}
         defaultValues={defaultValues}
-        isLoading={updateProfileMutation.isLoading}
+        isPending={updateProfileMutation.isPending}
         isFallbackImg={!user.avatarUrl && !avatarData?.avatar}
         user={user}
         userOrganization={user.organization}
@@ -254,13 +290,23 @@ const ProfileView = () => {
           if (values.email !== user.email && isCALIdentityProvider) {
             setTempFormValues(values);
             setConfirmPasswordOpen(true);
-          } else if (values.email !== user.email && !isCALIdentityProvider) {
-            setTempFormValues(values);
-            // Opens a dialog warning the change
-            setConfirmAuthEmailChangeWarningDialogOpen(true);
           } else {
             updateProfileMutation.mutate(values);
           }
+        }}
+        handleAddSecondaryEmail={() => setShowSecondaryEmailModalOpen(true)}
+        handleResendVerifyEmail={(email) => {
+          resendVerifyEmailMutation.mutate({ email });
+          showToast(t("email_sent"), "success");
+        }}
+        handleAccountDisconnect={(values) => {
+          if (isCALIdentityProvider) return;
+          if (user?.passwordAdded) {
+            setTempFormValues(values);
+            setShowAccountDisconnectWarning(true);
+            return;
+          }
+          setShowCreateAccountPasswordDialog(true);
         }}
         extraField={
           <div className="mt-6">
@@ -275,6 +321,7 @@ const ProfileView = () => {
             />
           </div>
         }
+        isCALIdentityProvider={isCALIdentityProvider}
       />
 
       <div className="border-subtle mt-6 rounded-lg rounded-b-none border border-b-0 p-6">
@@ -285,7 +332,7 @@ const ProfileView = () => {
       <Dialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
         <SectionBottomActions align="end">
           <DialogTrigger asChild>
-            <Button data-testid="delete-account" color="destructive" className="mt-1" StartIcon={Trash2}>
+            <Button data-testid="delete-account" color="destructive" className="mt-1" StartIcon="trash-2">
               {t("delete_account")}
             </Button>
           </DialogTrigger>
@@ -294,7 +341,7 @@ const ProfileView = () => {
           title={t("delete_account_modal_title")}
           description={t("confirm_delete_account_modal", { appName: APP_NAME })}
           type="creation"
-          Icon={AlertTriangle}>
+          Icon="triangle-alert">
           <>
             <div className="mb-10">
               <p className="text-default mb-4">{t("delete_account_confirmation_message")}</p>
@@ -337,8 +384,22 @@ const ProfileView = () => {
           title={t("confirm_password")}
           description={t("confirm_password_change_email")}
           type="creation"
-          Icon={AlertTriangle}>
+          Icon="triangle-alert">
           <div className="mb-10">
+            <div className="mb-4 grid gap-2 md:grid-cols-2">
+              <div>
+                <span className="text-emphasis mb-2 block text-sm font-medium leading-none">
+                  {t("old_email_address")}
+                </span>
+                <p className="text-subtle leading-none">{user.email}</p>
+              </div>
+              <div>
+                <span className="text-emphasis mb-2 block text-sm font-medium leading-none">
+                  {t("new_email_address")}
+                </span>
+                <p className="text-subtle leading-none">{tempFormValues?.email}</p>
+              </div>
+            </div>
             <PasswordField
               data-testid="password"
               name="password"
@@ -353,8 +414,9 @@ const ProfileView = () => {
           </div>
           <DialogFooter showDivider>
             <Button
+              data-testid="profile-update-email-submit-button"
               color="primary"
-              loading={confirmPasswordMutation.isLoading}
+              loading={confirmPasswordMutation.isPending}
               onClick={(e) => onConfirmPassword(e)}>
               {t("confirm")}
             </Button>
@@ -363,46 +425,103 @@ const ProfileView = () => {
         </DialogContent>
       </Dialog>
 
-      {/* If changing email from !CAL Login */}
-      <Dialog
-        open={confirmAuthEmailChangeWarningDialogOpen}
-        onOpenChange={setConfirmAuthEmailChangeWarningDialogOpen}>
+      <Dialog open={showCreateAccountPasswordDialog} onOpenChange={setShowCreateAccountPasswordDialog}>
         <DialogContent
-          title={t("confirm_auth_change")}
-          description={t("confirm_auth_email_change")}
+          title={t("create_account_password")}
+          description={t("create_account_password_hint")}
           type="creation"
-          Icon={AlertTriangle}>
+          Icon="triangle-alert">
+          <DialogFooter>
+            <DialogClose />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAccountDisconnectWarning} onOpenChange={setShowAccountDisconnectWarning}>
+        <DialogContent
+          title={t("disconnect_account")}
+          description={t("disconnect_account_hint")}
+          type="creation"
+          Icon="triangle-alert">
           <DialogFooter>
             <Button
               color="primary"
-              loading={updateProfileMutation.isLoading}
-              onClick={(e) => onConfirmAuthEmailChange(e)}>
+              onClick={() => {
+                updateProfileMutation.mutate({
+                  ...tempFormValues,
+                  unlinkConnectedAccount: true,
+                });
+                setShowAccountDisconnectWarning(false);
+              }}>
               {t("confirm")}
             </Button>
             <DialogClose />
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {showSecondaryEmailModalOpen && (
+        <SecondaryEmailModal
+          isLoading={addSecondaryEmailMutation.isPending}
+          errorMessage={secondaryEmailAddErrorMessage}
+          handleAddEmail={(values) => {
+            setSecondaryEmailAddErrorMessage("");
+            addSecondaryEmailMutation.mutate(values);
+          }}
+          onCancel={() => {
+            setSecondaryEmailAddErrorMessage("");
+            setShowSecondaryEmailModalOpen(false);
+          }}
+          clearErrorMessage={() => {
+            addSecondaryEmailMutation.reset();
+            setSecondaryEmailAddErrorMessage("");
+          }}
+        />
+      )}
+      {!!newlyAddedSecondaryEmail && (
+        <SecondaryEmailConfirmModal
+          email={newlyAddedSecondaryEmail}
+          onCancel={() => setNewlyAddedSecondaryEmail(undefined)}
+        />
+      )}
     </>
   );
+};
+
+type SecondaryEmailApiPayload = {
+  id: number;
+  email: string;
+  isDeleted: boolean;
+};
+
+type ExtendedFormValues = Omit<FormValues, "secondaryEmails"> & {
+  secondaryEmails: SecondaryEmailApiPayload[];
 };
 
 const ProfileForm = ({
   defaultValues,
   onSubmit,
+  handleAddSecondaryEmail,
+  handleResendVerifyEmail,
+  handleAccountDisconnect,
   extraField,
-  isLoading = false,
+  isPending = false,
   isFallbackImg,
   user,
   userOrganization,
+  isCALIdentityProvider,
 }: {
   defaultValues: FormValues;
-  onSubmit: (values: FormValues) => void;
+  onSubmit: (values: ExtendedFormValues) => void;
+  handleAddSecondaryEmail: () => void;
+  handleResendVerifyEmail: (email: string) => void;
+  handleAccountDisconnect: (values: ExtendedFormValues) => void;
   extraField?: React.ReactNode;
-  isLoading: boolean;
+  isPending: boolean;
   isFallbackImg: boolean;
   user: RouterOutputs["viewer"]["me"];
   userOrganization: RouterOutputs["viewer"]["me"]["organization"];
+  isCALIdentityProvider: boolean;
 }) => {
   const { t } = useLocale();
   const [firstRender, setFirstRender] = useState(true);
@@ -419,6 +538,14 @@ const ProfileForm = ({
       }),
     email: z.string().email(),
     bio: z.string(),
+    secondaryEmails: z.array(
+      z.object({
+        id: z.number(),
+        email: z.string().email(),
+        emailVerified: z.union([z.string(), z.null()]).optional(),
+        emailPrimary: z.boolean().optional(),
+      })
+    ),
   });
 
   const formMethods = useForm<FormValues>({
@@ -427,12 +554,69 @@ const ProfileForm = ({
   });
 
   const {
+    fields: secondaryEmailFields,
+    remove: deleteSecondaryEmail,
+    replace: updateAllSecondaryEmailFields,
+  } = useFieldArray({
+    control: formMethods.control,
+    name: "secondaryEmails",
+    keyName: "itemId",
+  });
+
+  const getUpdatedFormValues = (values: FormValues) => {
+    const changedFields = formMethods.formState.dirtyFields?.secondaryEmails || [];
+    const updatedValues: FormValues = {
+      ...values,
+    };
+
+    // If the primary email is changed, we will need to update
+    const primaryEmailIndex = updatedValues.secondaryEmails.findIndex(
+      (secondaryEmail) => secondaryEmail.emailPrimary
+    );
+    if (primaryEmailIndex >= 0) {
+      // Add the new updated value as primary email
+      updatedValues.email = updatedValues.secondaryEmails[primaryEmailIndex].email;
+    }
+
+    // We will only send the emails which have already changed
+    const updatedEmails: Email[] = [];
+    changedFields.map((field, index) => {
+      // If the email changed and if its only secondary email, we add it for updation, the first
+      // item in the list is always primary email
+      if (field?.email && updatedValues.secondaryEmails[index]?.id) {
+        updatedEmails.push(updatedValues.secondaryEmails[index]);
+      }
+    });
+
+    const deletedEmails = (user?.secondaryEmails || []).filter(
+      (secondaryEmail) => !updatedValues.secondaryEmails.find((val) => val.id && val.id === secondaryEmail.id)
+    );
+    const secondaryEmails = [
+      ...updatedEmails.map((email) => ({ ...email, isDeleted: false })),
+      ...deletedEmails.map((email) => ({ ...email, isDeleted: true })),
+    ].map((secondaryEmail) => pick(secondaryEmail, ["id", "email", "isDeleted"]));
+
+    return {
+      ...updatedValues,
+      secondaryEmails,
+    };
+  };
+
+  const handleFormSubmit = (values: FormValues) => {
+    onSubmit(getUpdatedFormValues(values));
+  };
+
+  const onDisconnect = () => {
+    handleAccountDisconnect(getUpdatedFormValues(formMethods.getValues()));
+  };
+
+  const {
     formState: { isSubmitting, isDirty },
   } = formMethods;
 
   const isDisabled = isSubmitting || !isDirty;
   return (
-    <Form form={formMethods} handleSubmit={onSubmit}>
+    <Form form={formMethods} handleSubmit={handleFormSubmit}>
       <div className="border-subtle border-x px-4 pb-10 pt-8 sm:px-6">
         <div className="flex items-center">
           <Controller
@@ -443,20 +627,14 @@ const ProfileForm = ({
               const organization =
                 userOrganization && userOrganization.id
                   ? {
-                      ...(userOrganization as Ensure<typeof user.organization, "id">),
+                      ...(userOrganization as Ensure<NonNullable<typeof user.organization>, "id">),
                       slug: userOrganization.slug || null,
                       requestedSlug: userOrganization.metadata?.requestedSlug || null,
                     }
                   : null;
               return (
                 <>
-                  <UserAvatar
-                    data-testid="profile-upload-avatar"
-                    previewSrc={value}
-                    size="lg"
-                    user={user}
-                    organization={organization}
-                  />
+                  <UserAvatar data-testid="profile-upload-avatar" previewSrc={value} size="lg" user={user} />
                   <div className="ms-4">
                     <h2 className="mb-2 text-sm font-medium">{t("profile_picture")}</h2>
                     <div className="flex gap-2">
@@ -507,9 +685,32 @@ const ProfileForm = ({
             setFirstRender={setFirstRender}
           />
         </div>
+        {/* // For Non-Cal indentities, we merge the values from DB and the user logging in,
+        so essentially there is no point in allowing them to disconnect, since when they log in they will get logged into the same account */}
+        {!isCALIdentityProvider && user.email !== user.identityProviderEmail && (
+          <div className="mt-6">
+            <Label>Connected accounts</Label>
+            <div className="flex items-center">
+              <span className="text-default text-sm capitalize">{user.identityProvider.toLowerCase()}</span>
+              {user.identityProviderEmail && (
+                <span className="text-default ml-2 text-sm">{user.identityProviderEmail}</span>
+              )}
+              <div className="flex flex-1 justify-end">
+                <Button color="destructive" onClick={onDisconnect} size="sm">
+                  Disconnect
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <SectionBottomActions align="end">
-        <Button loading={isLoading} disabled={isDisabled} color="primary" type="submit">
+        <Button
+          loading={isPending}
+          disabled={isDisabled}
+          color="primary"
+          type="submit"
+          data-testid="profile-submit-button">
           {t("update")}
         </Button>
       </SectionBottomActions>
