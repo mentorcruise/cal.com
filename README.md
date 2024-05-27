@@ -643,7 +643,7 @@ When deploying, you may need to migrate the staging or production database. To d
 DATABASE_URL=postgresql://doadmin:<password>@calcom-db-feb-1-backup-do-user-1744194-0.c.db.ondigitalocean.com:25061/Staging-Bouncer?pgbouncer=true yarn workspace @calcom/prisma db-deploy
 ```
 
-### Production (Caution)
+### Production
 
 ```shell
 DATABASE_URL=postgresql://doadmin:<password>@calcom-db-feb-1-backup-do-user-1744194-0.c.db.ondigitalocean.com:25061/Bouncer?pgbouncer=true yarn workspace @calcom/prisma db-deploy
