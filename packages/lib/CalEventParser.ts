@@ -292,7 +292,9 @@ export const isDailyVideoCall = (calEvent: CalendarEvent): boolean => {
 };
 
 export const getPublicVideoCallUrl = (calEvent: CalendarEvent): string => {
-  return `${WEBAPP_URL}/video/${getUid(calEvent)}`;
+  // Use a custom domain for cal video if specified in environment variables
+  const calVideoUrl = process.env.NEXT_PUBLIC_CAL_VIDEO_URL || WEBAPP_URL;
+  return `${calVideoUrl}/video/${getUid(calEvent)}`;
 };
 
 export const getVideoCallUrlFromCalEvent = (calEvent: CalendarEvent): string => {

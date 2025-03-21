@@ -382,7 +382,10 @@ function BookingListItem(booking: BookingItemProps) {
                   {(provider?.label || locationToDisplay?.startsWith("https://")) &&
                     locationToDisplay.startsWith("http") && (
                       <a
-                        href={locationToDisplay}
+                        href={locationToDisplay.replace(
+                          "https://cal-com-7esktt2w1-mentorcruise.vercel.app",
+                          "https://cal.mentorcruise.com"
+                        )}
                         onClick={(e) => e.stopPropagation()}
                         target="_blank"
                         title={locationToDisplay}
