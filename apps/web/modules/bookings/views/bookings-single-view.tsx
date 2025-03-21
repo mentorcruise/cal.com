@@ -1001,7 +1001,10 @@ const DisplayLocation = ({
 }) =>
   locationToDisplay.startsWith("http") ? (
     <a
-      href={locationToDisplay}
+      href={locationToDisplay.replace(
+        "https://cal-com-7esktt2w1-mentorcruise.vercel.app",
+        "https://cal.mentorcruise.com"
+      )}
       target="_blank"
       title={locationToDisplay}
       className={classNames("text-default flex items-center gap-2", className)}
