@@ -58,10 +58,6 @@ declare namespace NodeJS {
     readonly NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS: string | "help@cal.com";
     readonly NEXT_PUBLIC_COMPANY_NAME: string | "Cal.com, Inc.";
     /**
-     * Custom URL for Cal Video meetings. If not set, uses WEBAPP_URL.
-     */
-    readonly NEXT_PUBLIC_CAL_VIDEO_URL: string | undefined;
-    /**
      *  "strict" -> Strict CSP
      *  "non-strict" -> Strict CSP except the usage of unsafe-inline for `style-src`
      */
